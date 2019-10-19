@@ -8,7 +8,9 @@ using tcp = boost::asio::ip::tcp;
 
     // Resolver and socket require an io_context
     session::session(net::io_context& ioc): resolver_(net::make_strand(ioc)), ws_(net::make_strand(ioc))
-    {}
+    {
+        this->state = DISCONNECTED;
+    }
 
     // Start the asynchronous operation
     void session::connect(   char const* host,
@@ -39,7 +41,7 @@ using tcp = boost::asio::ip::tcp;
             
 
         // Set the timeout for the operation
-        beast::get_lowest_layer(ws_).expires_after(std::chrono::seconds(30));
+        beast::get_lowest_layer(ws_).expires_after(std::chrono::seconds(1));
 
 
         // Make the connection on the IP address we get from a lookup
@@ -112,15 +114,13 @@ using tcp = boost::asio::ip::tcp;
     {
         boost::ignore_unused(bytes_transferred);
 
-        this->RX_queue.push(this->buffer_RX.data());
-
         if(ec) {
             if (ec.message() == "End of file"){
-                    this->state = SOCKET_STATE::DISCONNECTING;
-                    ws_.async_close(websocket::close_code::normal,
-                        beast::bind_front_handler(
-                            &session::on_close,
-                            shared_from_this()));
+                    this->state = SOCKET_STATE::DISCONNECTED;
+                    std::cout << "closing" << std::endl;
+                     ws_.async_handshake(host_, "/", beast::bind_front_handler( &session::on_handshake,
+                                                                    shared_from_this()
+                                                                 ));
                 }
 
                 return;
@@ -142,7 +142,10 @@ using tcp = boost::asio::ip::tcp;
     {
         if(ec) return;
         // If we get here then the connection is closed gracefully;
+        std::cout << "Closing" << std::endl;
+        this->state = DISCONNECTED;
     }
+    
 
     void session::send_message(std::string &msg){
 
