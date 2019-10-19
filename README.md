@@ -9,9 +9,11 @@ Just 3 dependencies:
 - C++ 11
 
 ## Running 
-After you've pulled the repository:\
+After you've pulled the repository:
 
-`mkdir build && cd build`
-`cmake ..`
-`make`
-`cd bin && ./main.cpp`
+```bash
+mkdir build && cd build
+cmake ..
+make
+cd bin && ./main.cpp
+```
